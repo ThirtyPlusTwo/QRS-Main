@@ -1097,6 +1097,7 @@ private void HandleAutoERS()
     }
     if (!_AllModes["AUTOERS"].FeatureState) { AERSElapsedTime = 0f; AERSCycleCheck = false; return; }
 
+    needsERSUpdate = true;
     AERSElapsedTime += _delta;
     if (!AERSCycleCheck)
     {
