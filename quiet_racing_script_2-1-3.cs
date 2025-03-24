@@ -1,5 +1,5 @@
 /*
-QUIET RACING SCRIPT v2.1.2
+QUIET RACING SCRIPT v2.1.3
 
 CREATED AND BUG-TESTED BY THIRTY-TWO
 */
@@ -18,7 +18,7 @@ private bool doPitModeManeuver = true;
 private bool doExhaustPipeController = false;
 
 // Mode Control
-private int defaultSteeringMode = 1;
+private int defaultSteeringMode = 0;
 private int defaultSuspensionMode = 0;
 private int defaultStrengthMode = 0;
 private int defaultAutoERSMode = 0;
@@ -76,7 +76,7 @@ private float[][] frontOutsideTurningHeights = {
     new float[] {-0.32f}
 };
 private float[][] rearInsideTurningHeights = {
-    new float[] {0.09f},
+    new float[] {0.11f},
     new float[] {-0.32f}
 };
 private float[][] rearOutsideTurningHeights = {
@@ -145,15 +145,17 @@ private float stabGyroEnableDelay = 0.5f; // The duration in seconds that the st
 private float stabGyroMinSpeed = 10f; // The minimum speed of the car for the stability gyro feature to be active
 private float stabGyroCheckAltitude = 0f; // Set to 0f for the script to automatically determine this value
 private float autoFlippingActivationAngleDegrees = 80f;
-private float maxGyroRPM = 30f; // Value in RPM that the Auto-Flipping will set each gyro to respective of their orientation
+private float maxGyroRPM = 50f; // Value in RPM that the Auto-Flipping will set each gyro to respective of their orientation
 
 // Altitude Air Shock
 private float airShockCheckAltitude = 0f; // Set to 0f for the script to automatically determine this value
 private float airShockCheckDownwardSpeed = 5f; // 5f is 5m/s downward
 
 // Script Panel Updates
+private bool usingHudlcdV1 = false;
 private string scriptPanelName = "Script Panel";
-private string scriptPanelCustomData = "hudlcd:-0.965:-0.11:0.9:White:1";
+private string hudlcdV1CustomData = "hudlcd:-0.965:-0.11:0.9:White:1";
+private string hudlcdV2CustomData = "hudlcd -0.965x-0.11 @0.9 #white monospace";
 
 // Pit Mode Maneuver
 private string pitModeProjectorName = "Pit Projector";
@@ -175,7 +177,7 @@ private IMyTextPanel _scriptPanel;
 private IMyProjector _pitProjector;
 private string setupErrorMessage = "";
 private int numSetupErrors = 0;
-private string QRSVersion = "2.1.2";
+private string QRSVersion = "2.1.3";
 
 // Mode Control
 private Dictionary<string, FeatureModeControl> _AllModes = new Dictionary<string, FeatureModeControl>();
@@ -382,18 +384,23 @@ private bool HandleErrors(int setupErrors, string errorMessage)
 private void SetupSingularComponents()
 {
     _scriptPanel = GridTerminalSystem.GetBlockWithName(scriptPanelName) as IMyTextPanel;
-    if (_scriptPanel == null && _AllModes["SCRIPT"].FeatureState)
+    if (_scriptPanel == null && _AllModes["SCRIPT"].FeatureState && usingHudlcdV1)
     {
         setupErrorMessage += "The \"" + scriptPanelName + "\" is not found. Set doScriptPanelUpdates to false to ignore this.\n\n";
         numSetupErrors++;
     }
-    if (_scriptPanel != null && _AllModes["SCRIPT"].FeatureState)
+    if (_scriptPanel != null && _AllModes["SCRIPT"].FeatureState && usingHudlcdV1)
     {
         _scriptPanel.Enabled = true;
         _scriptPanel.Font = "Monospace";
-        _scriptPanel.CustomData = scriptPanelCustomData;
+        _scriptPanel.CustomData = hudlcdV1CustomData;
     }
+
     Me.GetSurface(0).Font = "Monospace";
+    Me.CustomData = "";
+    if (!usingHudlcdV1 && _AllModes["SCRIPT"].FeatureState) {
+        Me.CustomData = hudlcdV2CustomData;
+    }
 
     _pitProjector = GridTerminalSystem.GetBlockWithName(pitModeProjectorName) as IMyProjector;
 }
@@ -1382,7 +1389,7 @@ private void HandleScriptPanel()
     scriptInformationMessage += CurrentScreenMessage(currentScreen);
 
     Me.GetSurface(0).WriteText(scriptInformationMessage);
-    if (!_AllModes["SCRIPT"].FeatureState) { return; }
+    if (!_AllModes["SCRIPT"].FeatureState || !usingHudlcdV1) { return; }
     _scriptPanel.WriteText(scriptInformationMessage);
 }
 
